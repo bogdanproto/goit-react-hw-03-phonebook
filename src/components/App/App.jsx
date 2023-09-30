@@ -1,6 +1,5 @@
 import React, { Component } from 'react';
 import { nanoid } from 'nanoid';
-import contacts from 'data/contacts.json';
 import { ContactForm } from 'components/ContactForm/ContactForm';
 import { ContactList } from 'components/ContactList/ContactList';
 import { Filter } from 'components/Filter/Filter';
@@ -8,9 +7,26 @@ import { PhoneBook } from './App.styled';
 
 export class App extends Component {
   state = {
-    contacts: [...contacts],
+    contacts: [],
     filter: '',
   };
+
+  componentDidMount() {
+    const savedContacts = localStorage.getItem('contactsBook');
+
+    if (!savedContacts) {
+      return;
+    }
+    const parsedSavedContacts = JSON.parse(savedContacts);
+    this.setState({ contacts: parsedSavedContacts });
+  }
+
+  componentDidUpdate(prevProps, prevState) {
+    const { contacts } = this.state;
+    if (prevState.contacts !== contacts) {
+      localStorage.setItem('contactsBook', JSON.stringify(contacts));
+    }
+  }
 
   addContact = data => {
     const { contacts } = this.state;
@@ -52,7 +68,8 @@ export class App extends Component {
   };
 
   render() {
-    const filteredElement = this.toFilterElement(this.state.contacts);
+    const { contacts } = this.state;
+    const filteredElement = this.toFilterElement(contacts);
 
     return (
       <PhoneBook>
@@ -60,10 +77,14 @@ export class App extends Component {
         <ContactForm addContact={this.addContact} />
         <h3>Contacts</h3>
         <Filter value={this.state.filter} onChange={this.handleFilter} />
-        <ContactList
-          contactsBook={filteredElement}
-          deleteContact={this.deleteContact}
-        />
+        {contacts.length ? (
+          <ContactList
+            contactsBook={filteredElement}
+            deleteContact={this.deleteContact}
+          />
+        ) : (
+          <p>Contacts list is empty</p>
+        )}
       </PhoneBook>
     );
   }
